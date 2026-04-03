@@ -251,11 +251,7 @@ button{-webkit-appearance:none;cursor:pointer}
     </div>
   </div>
 
-  <div class="calcbtns">
-    <button type="button" class="cbtn cdiy" id="btnDiy">🟢 DIYで計算</button>
-    <button type="button" class="cbtn cout" id="btnOut">🟠 外注で計算</button>
-  </div>
-  <button type="button" class="cbtn cmix" id="btnMix">⚡ 選択配分で計算（混在）</button>
+  <button type="button" class="cbtn cmix" id="btnCalc">⚡ 計算する</button>
 </div>
 
 <!-- ===== 結果 ===== -->
@@ -810,9 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
     el.addEventListener('click', fn);
     el.addEventListener('touchend', function(e) { e.preventDefault(); fn(); });
   }
-  addBtn('btnDiy', function() { calc('diy'); });
-  addBtn('btnOut', function() { calc('out'); });
-  addBtn('btnMix', function() { calc('mix'); });
+  addBtn('btnCalc', function() { calc('mix'); });
 
   // 保存・戻る・クリア
   addBtn('btnSave', saveHis);
