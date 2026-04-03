@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>入居管理</title>
+    <meta name="theme-color" content="#1a1f36">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #0f1621 0%, #1a2332 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .header {
+            background: rgba(15, 22, 33, 0.95);
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .alert-banner {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 16px 0 16px;
+        }
+
+        .alert-expired {
+            background: rgba(244, 67, 54, 0.2);
+            color: #ef5350;
+            border: 1px solid rgba(244, 67, 54, 0.4);
+        }
+
+        .alert-danger {
+            background: rgba(244, 67, 54, 0.15);
+            color: #ef5350;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .alert-warn {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ffb74d;
+            border: 1px solid rgba(255, 152, 0, 0.4);
+        }
+
+        .alert-safe {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81c784;
+            border: 1px solid rgba(76, 175, 80, 0.4);
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 0;
+            background: rgba(20, 25, 40, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0;
+            margin: 0;
+            position: sticky;
+            top: 64px;
+            z-index: 99;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #808080;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: #4a9eff;
+            border-bottom-color: #4a9eff;
+        }
+
+        .tab-button:hover {
+            color: #a0a0a0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .property-card {
+            background: rgba(30, 35, 50, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .property-card:hover {
+            background: rgba(40, 45, 60, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .property-card.expanded {
+            background: rgba(40, 45, 60, 0.9);
+            border-color: rgba(74, 158, 255, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0;
+        }
+
+        .property-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 6px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .status-occupied {
+            background: rgba(76, 175, 80, 0.3);
+            color: #81c784;
+        }
+
+        .status-vacant {
+            background: rgba(255, 152, 0, 0.3);
+            color: #ffb74d;
+        }
+
+        .status-reform {
+            background: rgba(33, 150, 243, 0.3);
+            color: #64b5f6;
+        }
+
+        .card-brief {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .brief-item {
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        .brief-label {
+            color: #808080;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .brief-value {
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(50, 60, 80, 0.6);
+            color: #a0a0a0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(60, 70, 90, 0.8);
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .action-btn.delete {
+            color: #ef5350;
+            border-color: rgba(244, 67, 54, 0.3);
+        }
+
+        .action-btn.delete:hover {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: #ef5350;
+        }
+
+        .card-details {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+        }
+
+        .property-card.expanded .card-details {
+            display: block;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 6px 0;
+        }
+
+        .detail-label {
+            color: #808080;
+        }
+
+        .detail-value {
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            background: rgba(50, 60, 80, 0.6);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #4a9eff, #2196f3);
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .card {
+            background: rgba(30, 35, 50, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a9eff;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(50, 60, 80, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-toggle {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(50, 60, 80, 0.6);
+            color: #a0a0a0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: #4a9eff;
+            color: white;
+            border-color: #4a9eff;
+        }
+
+        .hidden-form {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .hidden-form.show {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .form-content {
+            background: linear-gradient(135deg, #0f1621 0%, #1a2332 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px 12px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #a0a0a0;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #e0e0e0;
+        }
+
+        .form-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            padding: 12px;
+            background: linear-gradient(135deg, #4a9eff 0%, #2196f3 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+        }
+
+        .btn-secondary {
+            padding: 12px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #a0a0a0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a9eff 0%, #2196f3 100%);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+            z-index: 150;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(74, 158, 255, 0.5);
+        }
+
+        .income-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: rgba(40, 50, 70, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 11px;
+            color: #808080;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4a9eff;
+        }
+
+        .income-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .income-table th {
+            background: rgba(40, 50, 70, 0.8);
+            padding: 10px 8px;
+            text-align: left;
+            color: #4a9eff;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(74, 158, 255, 0.3);
+        }
+
+        .income-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #a0a0a0;
+        }
+
+        .income-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #606060;
+        }
+
+        .conditional-fields {
+            display: none;
+        }
+
+        .conditional-fields.show {
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .income-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== モバイルタップ改善 ===== */
+        .tab-button, .fab, .btn-primary, .btn-secondary,
+        .action-btn, .toggle-btn, .close-btn, .property-card {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        button { -webkit-appearance: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>入居・契約管理</h1>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div class="tab-container">
+        <button type="button" class="tab-button active" data-tab="properties">📋 物件一覧</button>
+        <button type="button" class="tab-button" data-tab="income">💰 月次収入</button>
+    </div>
+
+    <div id="properties" class="tab-content active">
+        <div id="propertyList"></div>
+    </div>
+
+    <div id="income" class="tab-content">
+        <div id="incomeContent"></div>
+    </div>
+
+    <button type="button" class="fab" id="fabBtn">+</button>
+
+    <div id="propertyForm" class="hidden-form">
+        <div class="form-content">
+            <div class="form-header">
+                <h2 id="formTitle">物件を追加</h2>
+                <button type="button" class="close-btn" id="closeFormBtn">×</button>
+            </div>
+
+            <div class="form-group">
+                <label>物件名</label>
+                <input type="text" id="formPropertyName" placeholder="例：青山1丁目アパート">
+            </div>
+
+            <div class="form-group">
+                <label>ステータス</label>
+                <select id="formStatus" onchange="updateConditionalFields()">
+                    <option value="occupied">入居中（定期借家）</option>
+                    <option value="occupied-oc">入居中（OC）</option>
+                    <option value="occupied-normal">入居中（普通借家）</option>
+                    <option value="vacant">空室</option>
+                    <option value="reform">リフォーム中</option>
+                </select>
+            </div>
+
+            <div id="tenantFields" class="conditional-fields show">
+                <div class="form-group">
+                    <label>入居者名</label>
+                    <input type="text" id="formTenantName" placeholder="例：田中太郎">
+                </div>
+
+                <div class="input-row">
+                    <div class="form-group">
+                        <label>月額家賃（万円）</label>
+                        <input type="number" id="formMonthlyRent" placeholder="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>管理手数料率</label>
+                        <input type="number" id="formMgmtFeeRate" placeholder="5.5" value="5.5" step="0.5">
+                    </div>
+                </div>
+            </div>
+
+            <div id="contractFields" class="conditional-fields show">
+                <div class="input-row">
+                    <div class="form-group">
+                        <label>契約開始日</label>
+                        <input type="date" id="formContractStart">
+                    </div>
+                    <div class="form-group">
+                        <label>契約期間</label>
+                        <select id="formContractDuration">
+                            <option value="1">1年</option>
+                            <option value="2">2年</option>
+                            <option value="3">3年</option>
+                            <option value="4">4年</option>
+                            <option value="5">5年</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>契約更新希望</label>
+                    <div class="form-toggle">
+                        <button type="button" class="toggle-btn active" data-value="yes">更新希望</button>
+                        <button type="button" class="toggle-btn" data-value="no">更新なし</button>
+                    </div>
+                    <input type="hidden" id="formRenewalIntent" value="yes">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🔥 火災保険 満期日</label>
+                <input type="date" id="formFireInsuranceExpiry">
+            </div>
+
+            <div class="form-group">
+                <label>火災保険 メモ（保険会社など）</label>
+                <input type="text" id="formFireInsuranceNote" placeholder="例：県民共済 2年契約">
+            </div>
+
+            <div class="form-group">
+                <label>メモ</label>
+                <textarea id="formMemo" placeholder="特記事項など" style="resize: vertical; min-height: 80px;"></textarea>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn-secondary" id="cancelFormBtn">キャンセル</button>
+                <button type="button" class="btn-primary" id="saveFormBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let properties = [];
+        let editingIndex = null;
+
+        function initializeData() {
+            const saved = localStorage.getItem('properties');
+            if (saved) {
+                properties = JSON.parse(saved);
+            }
+            renderPropertyList();
+            updateAlertBanner();
+            updateIncomeTab();
+        }
+
+        function saveProperties() {
+            localStorage.setItem('properties', JSON.stringify(properties));
+        }
+
+        function openPropertyForm(index = null) {
+            editingIndex = index;
+            const form = document.getElementById('propertyForm');
+
+            if (index !== null) {
+                const prop = properties[index];
+                document.getElementById('formTitle').textContent = '物件を編集';
+                document.getElementById('formPropertyName').value = prop.name;
+                document.getElementById('formStatus').value = prop.status;
+                document.getElementById('formTenantName').value = prop.tenantName || '';
+                document.getElementById('formMonthlyRent').value = prop.monthlyRent || '';
+                document.getElementById('formMgmtFeeRate').value = prop.mgmtFeeRate != null ? prop.mgmtFeeRate : 5.5;
+                document.getElementById('formContractStart').value = prop.contractStart || '';
+                document.getElementById('formContractDuration').value = prop.contractDuration || '2';
+                document.getElementById('formRenewalIntent').value = prop.renewalIntent || 'yes';
+                document.getElementById('formFireInsuranceExpiry').value = prop.fireInsuranceExpiry || '';
+                document.getElementById('formFireInsuranceNote').value = prop.fireInsuranceNote || '';
+                document.getElementById('formMemo').value = prop.memo || '';
+
+                // Update toggle buttons
+                document.querySelectorAll('.toggle-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.value === (prop.renewalIntent || 'yes')) {
+                        btn.classList.add('active');
+                    }
+                });
+            } else {
+                document.getElementById('formTitle').textContent = '物件を追加';
+                // reset() はformタグ専用のため手動でクリア
+                document.getElementById('formPropertyName').value = '';
+                document.getElementById('formTenantName').value = '';
+                document.getElementById('formMonthlyRent').value = '';
+                document.getElementById('formContractStart').value = '';
+                document.getElementById('formFireInsuranceExpiry').value = '';
+                document.getElementById('formFireInsuranceNote').value = '';
+                document.getElementById('formMemo').value = '';
+                document.getElementById('formStatus').value = 'occupied';
+                document.getElementById('formRenewalIntent').value = 'yes';
+                document.getElementById('formMgmtFeeRate').value = 5.5;
+                document.getElementById('formContractDuration').value = '2';
+                document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+                document.querySelectorAll('.toggle-btn')[1].classList.remove('active');
+            }
+
+            updateConditionalFields();
+            form.classList.add('show');
+        }
+
+        function closePropertyForm() {
+            editingIndex = null;
+            document.getElementById('propertyForm').classList.remove('show');
+        }
+
+        function updateConditionalFields() {
+            const status = document.getElementById('formStatus').value;
+            const tenantFields = document.getElementById('tenantFields');
+            const contractFields = document.getElementById('contractFields');
+
+            if (status === 'vacant' || status === 'reform') {
+                tenantFields.classList.remove('show');
+                contractFields.classList.remove('show');
+            } else {
+                tenantFields.classList.add('show');
+                contractFields.classList.add('show');
+            }
+        }
+
+        function setRenewalIntent(btn) {
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('formRenewalIntent').value = btn.dataset.value;
+        }
+
+        function saveProperty() {
+            const prop = {
+                name: document.getElementById('formPropertyName').value,
+                status: document.getElementById('formStatus').value,
+                tenantName: document.getElementById('formTenantName').value || null,
+                monthlyRent: parseFloat(document.getElementById('formMonthlyRent').value) || 0,
+                mgmtFeeRate: document.getElementById('formMgmtFeeRate').value !== '' ? parseFloat(document.getElementById('formMgmtFeeRate').value) : 5.5,
+                contractStart: document.getElementById('formContractStart').value || null,
+                contractDuration: parseInt(document.getElementById('formContractDuration').value) || 2,
+                renewalIntent: document.getElementById('formRenewalIntent').value,
+                fireInsuranceExpiry: document.getElementById('formFireInsuranceExpiry').value || null,
+                fireInsuranceNote: document.getElementById('formFireInsuranceNote').value || null,
+                memo: document.getElementById('formMemo').value || null
+            };
+
+            if (!prop.name) {
+                alert('物件名を入力してください');
+                return;
+            }
+
+            if (editingIndex !== null) {
+                properties[editingIndex] = prop;
+            } else {
+                properties.push(prop);
+            }
+
+            saveProperties();
+            renderPropertyList();
+            updateAlertBanner();
+            updateIncomeTab();
+            closePropertyForm();
+        }
+
+        function deleteProperty(index) {
+            if (confirm('この物件を削除してもよろしいですか？')) {
+                properties.splice(index, 1);
+                saveProperties();
+                renderPropertyList();
+                updateAlertBanner();
+                updateIncomeTab();
+            }
+        }
+
+        function getContractStatus(prop) {
+            if (prop.status === 'vacant' || prop.status === 'reform' || !prop.contractStart) {
+                return null;
+            }
+
+            const startDate = new Date(prop.contractStart);
+            const endDate = new Date(startDate);
+            endDate.setFullYear(endDate.getFullYear() + prop.contractDuration);
+
+            const now = new Date();
+            const monthsRemaining = (endDate.getFullYear() - now.getFullYear()) * 12 + (endDate.getMonth() - now.getMonth());
+
+            const noticeDate = new Date(endDate);
+            noticeDate.setMonth(noticeDate.getMonth() - 7);
+
+            return {
+                endDate,
+                monthsRemaining,
+                noticeDate,
+                isExpired: endDate < now,
+                isDanger: monthsRemaining <= 7 && !endDate < now,
+                isWarn: monthsRemaining > 7 && monthsRemaining <= 10,
+                isSafe: monthsRemaining > 10,
+                percentElapsed: Math.min(100, Math.max(0, (now - startDate) / (endDate - startDate) * 100))
+            };
+        }
+
+        function getFireInsuranceStatus(prop) {
+            if (!prop.fireInsuranceExpiry) return null;
+            const expiry = new Date(prop.fireInsuranceExpiry);
+            const now = new Date();
+            // 月数差（年月ベース）
+            const monthsLeft = (expiry.getFullYear() - now.getFullYear()) * 12 + (expiry.getMonth() - now.getMonth());
+            return {
+                expiry,
+                monthsLeft,
+                isExpired: expiry < now,
+                isWarn: !(expiry < now) && monthsLeft <= 2  // 2ヶ月以内
+            };
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'occupied': { class: 'status-occupied', text: '入居中' },
+                'occupied-oc': { class: 'status-occupied', text: '入居中（OC）' },
+                'occupied-normal': { class: 'status-occupied', text: '入居中' },
+                'vacant': { class: 'status-vacant', text: '空室' },
+                'reform': { class: 'status-reform', text: 'リフォーム中' }
+            };
+            const badge = badges[status];
+            return `<span class="status-badge ${badge.class}">${badge.text}</span>`;
+        }
+
+        function renderPropertyList() {
+            const list = document.getElementById('propertyList');
+            if (properties.length === 0) {
+                list.innerHTML = '<div class="empty-state">物件がありません。+ボタンで追加してください</div>';
+                return;
+            }
+
+            list.innerHTML = properties.map((prop, idx) => {
+                const contractStatus = getContractStatus(prop);
+                const mgmtFee = prop.monthlyRent * (prop.mgmtFeeRate / 100);
+                const netMonthly = prop.monthlyRent - mgmtFee;
+
+                let detailsHtml = '';
+                if (contractStatus) {
+                    const percentElapsed = contractStatus.percentElapsed.toFixed(0);
+                    detailsHtml = `
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentElapsed}%"></div>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">契約進行度</span>
+                            <span class="detail-value">${percentElapsed}% (残り${contractStatus.monthsRemaining}ヶ月)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">契約終了日</span>
+                            <span class="detail-value">${contractStatus.endDate.toLocaleDateString('ja-JP')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">解約通知期限</span>
+                            <span class="detail-value">${contractStatus.noticeDate.toLocaleDateString('ja-JP')}</span>
+                        </div>
+                    `;
+                }
+
+                if (prop.status !== 'vacant' && prop.status !== 'reform') {
+                    detailsHtml += `
+                        <div class="detail-row">
+                            <span class="detail-label">月額家賃</span>
+                            <span class="detail-value">${prop.monthlyRent}万円</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">管理手数料</span>
+                            <span class="detail-value">${mgmtFee.toFixed(2)}万円</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">月次手残り</span>
+                            <span class="detail-value">${netMonthly.toFixed(2)}万円</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">契約更新</span>
+                            <span class="detail-value">${prop.renewalIntent === 'yes' ? '更新希望' : '更新なし'}</span>
+                        </div>
+                    `;
+                }
+
+                const fireStatus = getFireInsuranceStatus(prop);
+                if (fireStatus) {
+                    const expiryStr = fireStatus.expiry.toLocaleDateString('ja-JP');
+                    let fireColor = '#a0a0a0';
+                    let fireIcon = '🔥';
+                    let fireSuffix = '';
+                    if (fireStatus.isExpired) {
+                        fireColor = '#ef5350'; fireIcon = '🚨'; fireSuffix = '【期限切れ！】';
+                    } else if (fireStatus.isWarn) {
+                        fireColor = '#ffb74d'; fireIcon = '⚠️'; fireSuffix = `（残り約${fireStatus.monthsLeft}ヶ月）`;
+                    } else {
+                        fireSuffix = `（残り約${fireStatus.monthsLeft}ヶ月）`;
+                    }
+                    detailsHtml += `
+                        <div class="detail-row">
+                            <span class="detail-label">${fireIcon} 火災保険満期</span>
+                            <span class="detail-value" style="color:${fireColor}">${expiryStr} ${fireSuffix}</span>
+                        </div>
+                    `;
+                    if (prop.fireInsuranceNote) {
+                        detailsHtml += `
+                            <div class="detail-row">
+                                <span class="detail-label">保険メモ</span>
+                                <span class="detail-value">${prop.fireInsuranceNote}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (prop.memo) {
+                    detailsHtml += `
+                        <div class="detail-row">
+                            <span class="detail-label">メモ</span>
+                            <span class="detail-value">${prop.memo}</span>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="property-card" data-card-idx="${idx}">
+                        <div class="card-header">
+                            <div>
+                                <div class="property-name">${prop.name}</div>
+                                ${getStatusBadge(prop.status)}
+                            </div>
+                        </div>
+                        <div class="card-brief">
+                            <div class="brief-item">
+                                <div class="brief-label">入居者</div>
+                                <div class="brief-value">${prop.tenantName || '—'}</div>
+                            </div>
+                            <div class="brief-item">
+                                <div class="brief-label">月額家賃</div>
+                                <div class="brief-value">${prop.monthlyRent ? prop.monthlyRent + '万円' : '—'}</div>
+                            </div>
+                        </div>
+                        <div class="card-details">
+                            ${detailsHtml}
+                        </div>
+                        <div class="card-actions">
+                            <button type="button" class="action-btn edit-btn" data-idx="${idx}">編集</button>
+                            <button type="button" class="action-btn delete del-btn" data-idx="${idx}">削除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleCard(index) {
+            const card = document.querySelector('.property-card[data-card-idx="' + index + '"]');
+            if (card) card.classList.toggle('expanded');
+        }
+
+        // 物件リストのイベント委譲（click＋touchend）
+        function handlePropertyListEvent(e) {
+            var t = e.target;
+            // 編集ボタン
+            if (t.classList.contains('edit-btn') || t.closest && t.closest('.edit-btn')) {
+                var btn = t.classList.contains('edit-btn') ? t : t.closest('.edit-btn');
+                if (btn) { if (e.type === 'touchend') e.preventDefault(); e.stopPropagation(); openPropertyForm(parseInt(btn.dataset.idx)); return; }
+            }
+            // 削除ボタン
+            if (t.classList.contains('del-btn') || t.closest && t.closest('.del-btn')) {
+                var btn2 = t.classList.contains('del-btn') ? t : t.closest('.del-btn');
+                if (btn2) { if (e.type === 'touchend') e.preventDefault(); e.stopPropagation(); deleteProperty(parseInt(btn2.dataset.idx)); return; }
+            }
+            // カードタップで展開
+            var card = t;
+            while (card && !card.classList.contains('property-card')) card = card.parentElement;
+            if (card && card.dataset.cardIdx !== undefined) {
+                if (e.type === 'touchend') e.preventDefault();
+                toggleCard(parseInt(card.dataset.cardIdx));
+            }
+        }
+
+        var propList = document.getElementById('propertyList');
+        propList.addEventListener('click', handlePropertyListEvent);
+        propList.addEventListener('touchend', handlePropertyListEvent);
+
+        function updateAlertBanner() {
+            const container = document.getElementById('alertContainer');
+            const alerts = [];
+
+            // ===== 契約アラート =====
+            let contractExpired = 0, contractDanger = 0, contractWarn = 0;
+            properties.forEach(prop => {
+                const cs = getContractStatus(prop);
+                if (!cs) return;
+                if (cs.isExpired) contractExpired++;
+                else if (cs.isDanger) contractDanger++;
+                else if (cs.isWarn) contractWarn++;
+            });
+
+            if (contractExpired > 0) {
+                alerts.push({ cls: 'alert-expired', msg: `🚨 <strong>${contractExpired}</strong>件の契約が満了しています` });
+            } else if (contractDanger > 0) {
+                alerts.push({ cls: 'alert-danger', msg: `⚠️ <strong>${contractDanger}</strong>件で解約通知期限が迫っています（7ヶ月以内）` });
+            } else if (contractWarn > 0) {
+                alerts.push({ cls: 'alert-warn', msg: `🔔 <strong>${contractWarn}</strong>件で更新計画を開始してください（7〜10ヶ月以内）` });
+            } else {
+                alerts.push({ cls: 'alert-safe', msg: `✅ 全物件の契約が安定しています` });
+            }
+
+            // ===== 火災保険アラート =====
+            let fireExpired = 0, fireWarn = 0;
+            const fireWarnNames = [];
+            properties.forEach(prop => {
+                const fs = getFireInsuranceStatus(prop);
+                if (!fs) return;
+                if (fs.isExpired) fireExpired++;
+                else if (fs.isWarn) { fireWarn++; fireWarnNames.push(prop.name); }
+            });
+
+            if (fireExpired > 0) {
+                alerts.push({ cls: 'alert-expired', msg: `🚨 <strong>${fireExpired}</strong>件の火災保険が期限切れです！すぐに更新を` });
+            }
+            if (fireWarn > 0) {
+                alerts.push({ cls: 'alert-warn', msg: `⚠️ 火災保険の満期が2ヶ月以内です：${fireWarnNames.join('、')}` });
+            }
+
+            container.innerHTML = alerts.map(a =>
+                `<div class="alert-banner ${a.cls}" style="display:flex">${a.msg}</div>`
+            ).join('');
+        }
+
+        function updateIncomeTab() {
+            const content = document.getElementById('incomeContent');
+
+            let totalGrossRent = 0;
+            let totalNetRent = 0;
+            let occupiedCount = 0;
+            let vacantCount = 0;
+
+            properties.forEach(prop => {
+                if (prop.status === 'vacant') {
+                    vacantCount++;
+                } else if (prop.status === 'reform') {
+                    // Skip reform properties in income calculation
+                } else {
+                    occupiedCount++;
+                    totalGrossRent += prop.monthlyRent || 0;
+                    const mgmtFee = (prop.monthlyRent || 0) * (prop.mgmtFeeRate / 100);
+                    totalNetRent += (prop.monthlyRent || 0) - mgmtFee;
+                }
+            });
+
+            const activeProperties = properties.filter(p => p.status !== 'vacant' && p.status !== 'reform');
+
+            let incomeTableHtml = '';
+            if (activeProperties.length > 0) {
+                incomeTableHtml = `
+                    <table class="income-table">
+                        <thead>
+                            <tr>
+                                <th>物件名</th>
+                                <th>月額家賃</th>
+                                <th>手数料</th>
+                                <th>手残り</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${activeProperties.map(prop => {
+                                const mgmtFee = (prop.monthlyRent || 0) * (prop.mgmtFeeRate / 100);
+                                const net = (prop.monthlyRent || 0) - mgmtFee;
+                                return `
+                                    <tr>
+                                        <td>${prop.name}</td>
+                                        <td>${prop.monthlyRent}万円</td>
+                                        <td>${mgmtFee.toFixed(2)}万円</td>
+                                        <td>${net.toFixed(2)}万円</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            content.innerHTML = `
+                <div class="income-summary">
+                    <div class="summary-card">
+                        <div class="summary-label">総家賃収入</div>
+                        <div class="summary-value">${totalGrossRent.toFixed(1)}万円</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">手数料差引後</div>
+                        <div class="summary-value">${totalNetRent.toFixed(1)}万円</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">入居中</div>
+                        <div class="summary-value">${occupiedCount}件</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">空室</div>
+                        <div class="summary-value">${vacantCount}件</div>
+                    </div>
+                </div>
+
+                ${incomeTableHtml}
+            `;
+        }
+
+        // ===== タップ対応ユーティリティ =====
+        function addTap(el, fn) {
+            if (!el) return;
+            el.addEventListener('click', fn);
+            el.addEventListener('touchend', function(e) { e.preventDefault(); fn(e); });
+        }
+
+        // タブ切り替え
+        document.querySelectorAll('.tab-button').forEach(function(btn) {
+            addTap(btn, function() {
+                document.querySelectorAll('.tab-button').forEach(function(b) { b.classList.remove('active'); });
+                document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // FAB（＋ボタン）
+        addTap(document.getElementById('fabBtn'), function() { openPropertyForm(); });
+
+        // フォームを閉じる
+        addTap(document.getElementById('closeFormBtn'), function() { closePropertyForm(); });
+        addTap(document.getElementById('cancelFormBtn'), function() { closePropertyForm(); });
+        addTap(document.getElementById('saveFormBtn'), function() { saveProperty(); });
+
+        // 更新希望トグル
+        document.querySelectorAll('.toggle-btn').forEach(function(btn) {
+            addTap(btn, function() { setRenewalIntent(btn); });
+        });
+
+        // フォーム外タップで閉じる
+        document.getElementById('propertyForm').addEventListener('click', function(e) {
+            if (e.target === e.currentTarget) closePropertyForm();
+        });
+        document.getElementById('propertyForm').addEventListener('touchend', function(e) {
+            if (e.target === e.currentTarget) { e.preventDefault(); closePropertyForm(); }
+        });
+
+        // Initialize
+        initializeData();
+    </script>
+</body>
+</html>

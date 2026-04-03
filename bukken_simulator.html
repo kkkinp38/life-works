@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="物件シミュ">
+<meta name="theme-color" content="#0f0f1a">
+<title>築古戸建 購入判断シミュレーター</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f1a;--card:#1a1a2e;--card2:#16213e;
+  --accent:#4f8ef7;--accent2:#7c3aed;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--orange:#fb923c;
+  --text:#f1f5f9;--muted:#94a3b8;--border:rgba(255,255,255,.08);
+  --radius:16px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:30px}
+header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 16px 14px;padding-top:calc(env(safe-area-inset-top,0px)+20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+header h1{font-size:16px;font-weight:700}
+header p{font-size:11px;color:var(--muted);margin-top:2px}
+.tabs{display:flex;background:var(--card);border-radius:12px;padding:4px;margin:12px 16px 0;gap:4px}
+.tab{flex:1;padding:10px 4px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;border-radius:9px;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--accent);color:#fff}
+.section{display:none;padding:12px 16px 0}
+.section.show{display:block}
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.ctitle{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.field{margin-bottom:10px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.fw{position:relative;display:flex;align-items:center}
+.fw input{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:10px 36px 10px 12px;font-size:16px;font-weight:600;color:var(--text);outline:none;-webkit-appearance:none;transition:border-color .2s}
+.fw input:focus{border-color:var(--accent)}
+.fw input::placeholder{color:rgba(148,163,184,.4);font-weight:400;font-size:13px}
+.un{position:absolute;right:10px;font-size:11px;color:var(--muted);pointer-events:none}
+.tip{font-size:10px;color:rgba(148,163,184,.55);margin-top:3px}
+.slrow{display:flex;align-items:center;gap:8px;margin-top:4px}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);cursor:pointer}
+.slv{font-size:12px;font-weight:700;color:var(--accent);min-width:38px;text-align:right}
+.lvbtns{display:flex;gap:6px;margin-bottom:12px}
+.lvbtn{flex:1;padding:8px 4px;border:1.5px solid var(--border);border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+.lvbtn.active{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.1)}
+.cathead{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:8px 0 5px;border-bottom:1px solid var(--border);margin-bottom:3px}
+.ritem{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ritem:last-child{border-bottom:none}
+.ritem-head{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.chk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border);background:var(--card2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:13px;font-weight:700;color:transparent}
+.chk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.rinfo{flex:1;pointer-events:none}
+.rname{font-size:13px;font-weight:500}
+.rhint{font-size:10px;color:var(--muted)}
+.rbadge{font-size:9px;padding:2px 5px;border-radius:4px;flex-shrink:0;pointer-events:none}
+.bl{background:rgba(34,197,94,.15);color:var(--green)}
+.bm{background:rgba(245,158,11,.15);color:var(--yellow)}
+.bh{background:rgba(239,68,68,.15);color:var(--red)}
+.rexp{display:none;padding:8px 0 4px 30px}
+.rexp.open{display:block}
+.mtog{display:flex;background:var(--card2);border-radius:8px;padding:3px;gap:3px;width:fit-content;margin-bottom:7px}
+.mbtn{padding:5px 13px;border:none;border-radius:6px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.mbtn.adiy{background:var(--green);color:#fff}
+.mbtn.aout{background:var(--orange);color:#fff}
+.cprev{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.citem .cl{font-size:10px;color:var(--muted)}
+.citem .cv{font-size:13px;font-weight:700}
+.cv.dg{color:var(--green)}
+.cv.og{color:var(--orange)}
+.csel{font-size:12px;font-weight:700;color:var(--accent);background:rgba(79,142,247,.12);padding:3px 9px;border-radius:16px}
+.qrow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.ql{font-size:11px;color:var(--muted)}
+.qstep{display:flex;align-items:center;background:var(--card2);border-radius:8px;overflow:hidden;border:1.5px solid var(--border)}
+.qbtn{width:34px;height:34px;border:none;background:transparent;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.qbtn:active{background:rgba(255,255,255,.1)}
+.qnum{min-width:28px;text-align:center;font-size:14px;font-weight:700;color:var(--accent)}
+.rtbar{background:var(--card2);border-radius:12px;padding:12px 14px;margin-top:10px}
+.rtrow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.rtrow:last-child{border-bottom:none;padding-top:8px;margin-top:4px}
+.rtrow .rtk{color:var(--muted)}
+.rtrow .rtv{font-weight:700}
+.rtrow.grand .rtk{font-weight:700;color:var(--text)}
+.rtrow.grand .rtv{font-size:17px;color:var(--accent)}
+.dv{color:var(--green)}
+.ov{color:var(--orange)}
+.calcbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.cbtn{padding:14px 6px;border:none;border-radius:13px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:transform .1s;letter-spacing:.2px}
+.cbtn:active{transform:scale(.97)}
+.cdiy{background:linear-gradient(135deg,#16a34a,#15803d);box-shadow:0 4px 16px rgba(34,197,94,.25)}
+.cout{background:linear-gradient(135deg,#ea580c,#c2410c);box-shadow:0 4px 16px rgba(251,146,60,.25)}
+.cmix{width:100%;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 4px 16px rgba(79,142,247,.25)}
+.vbanner{border-radius:var(--radius);padding:18px;margin-bottom:12px;text-align:center}
+.vbanner.great{background:rgba(34,197,94,.15);border:1.5px solid var(--green)}
+.vbanner.good{background:rgba(79,142,247,.15);border:1.5px solid var(--accent)}
+.vbanner.warn{background:rgba(245,158,11,.15);border:1.5px solid var(--yellow)}
+.vbanner.bad{background:rgba(239,68,68,.15);border:1.5px solid var(--red)}
+.vico{font-size:36px;margin-bottom:2px}
+.vlbl{font-size:21px;font-weight:800;margin-bottom:2px}
+.vsub{font-size:12px;color:var(--muted)}
+.vbanner.great .vlbl{color:var(--green)}
+.vbanner.good  .vlbl{color:var(--accent)}
+.vbanner.warn  .vlbl{color:var(--yellow)}
+.vbanner.bad   .vlbl{color:var(--red)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 11px;text-align:center}
+.mc.full{grid-column:1/-1}
+.mc .ml{font-size:10px;color:var(--muted);margin-bottom:5px;line-height:1.3}
+.mc .mv{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.mc .mv .u2{font-size:12px;font-weight:500;color:var(--muted);margin-left:2px}
+.mc .ms{font-size:10px;color:var(--muted);margin-top:2px}
+.mc.pos .mv{color:var(--green)}
+.mc.war .mv{color:var(--yellow)}
+.mc.dan .mv{color:var(--red)}
+.mc.inf .mv{color:var(--accent)}
+.cmptbl{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+.cmphead{padding:10px 14px;background:rgba(255,255,255,.03);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.cmplbls{display:grid;grid-template-columns:1fr 80px 80px;padding:5px 14px 3px}
+.cmplbls span{font-size:10px;font-weight:700}
+.cl-diy{text-align:right;color:var(--green)}
+.cl-out{text-align:right;color:var(--orange)}
+.cmprow{display:grid;grid-template-columns:1fr 80px 80px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;align-items:center}
+.cmprow:last-child{border-bottom:none}
+.cmprow .cn{color:var(--muted)}
+.cmprow .cd{text-align:right;font-weight:600;color:var(--green)}
+.cmprow .co{text-align:right;font-weight:600;color:var(--orange)}
+.cmprow.tot{background:rgba(255,255,255,.03)}
+.cmprow.tot .cn{font-weight:700;color:var(--text)}
+.bkd{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.bkrow{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.bkrow:last-child{border-bottom:none}
+.bkrow .bk{color:var(--muted)}
+.bkrow .bv{font-weight:600}
+.bkrow.btot{background:rgba(79,142,247,.06)}
+.bkrow.btot .bk,.bkrow.btot .bv{font-weight:700;color:var(--accent)}
+.savbtn{width:100%;padding:14px;border:none;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin:6px 0;box-shadow:0 4px 16px rgba(79,142,247,.25)}
+.bkbtn{width:100%;padding:12px;border:none;border-radius:13px;background:linear-gradient(135deg,#334155,#475569);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px}
+.hitem{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px;margin-bottom:10px;cursor:pointer}
+.hitem:active{border-color:var(--accent)}
+.hhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.hname{font-size:13px;font-weight:700}
+.hdate{font-size:10px;color:var(--muted)}
+.hmet{display:flex;gap:12px;flex-wrap:wrap}
+.hm{font-size:11px;color:var(--muted)}
+.hm span{color:var(--text);font-weight:600}
+.hbadge{display:inline-block;padding:2px 7px;border-radius:16px;font-size:10px;font-weight:700;margin-right:5px}
+.bg-great{background:rgba(34,197,94,.2);color:var(--green)}
+.bg-good{background:rgba(79,142,247,.2);color:var(--accent)}
+.bg-warn{background:rgba(245,158,11,.2);color:var(--yellow)}
+.bg-bad{background:rgba(239,68,68,.2);color:var(--red)}
+.clearbtn{width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-top:6px}
+.emsg{text-align:center;color:var(--muted);padding:36px 16px;font-size:13px}
+.rmlabel{text-align:center;font-size:11px;color:var(--muted);margin-bottom:6px}
+.nameinp{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:15px;color:var(--text);outline:none;-webkit-appearance:none}
+.nameinp:focus{border-color:var(--accent)}
+.nameinp::placeholder{color:rgba(148,163,184,.4)}
+/* ===== モバイルタップ改善 ===== */
+.tab,.lvbtn,.cbtn,.qbtn,.mbtn,.savbtn,.bkbtn,.clearbtn,.hitem,.ritem-head{touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+button{-webkit-appearance:none;cursor:pointer}
+/* ===== 項目別レベルボタン ===== */
+.ilvbtns{display:flex;gap:4px;margin-bottom:7px;align-items:center}
+.ilvlbl{font-size:10px;color:var(--muted);white-space:nowrap;margin-right:2px}
+.ilvbtn{flex:1;padding:4px 2px;border:1.5px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;touch-action:manipulation;-webkit-appearance:none}
+.ilvbtn.active{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.1)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏚️ 築古戸建 購入判断シミュレーター</h1>
+  <p>内覧チェック → リフォーム見積もり → 利回り計算</p>
+</header>
+
+<!-- タブ -->
+<div class="tabs" id="tabbar">
+  <button class="tab active" data-tab="inp">📝 入力</button>
+  <button class="tab" data-tab="res">📊 結果</button>
+  <button class="tab" data-tab="his">📋 履歴</button>
+</div>
+
+<!-- ===== 入力 ===== -->
+<div id="inp" class="section show">
+  <div class="card" style="margin-top:12px">
+    <div class="ctitle">📍 物件名（任意）</div>
+    <input class="nameinp" id="nm" type="text" placeholder="例：防府市牟礼 10号" maxlength="20">
+  </div>
+  <div class="card">
+    <div class="ctitle">💰 取得コスト</div>
+    <div class="field">
+      <label>物件価格</label>
+      <div class="fw"><input type="number" id="price" inputmode="decimal" placeholder="70"><span class="un">万円</span></div>
+    </div>
+    <div class="field">
+      <label>諸費用（仲介手数料・登記費用等）</label>
+      <div class="fw"><input type="number" id="misc" inputmode="decimal" placeholder="44"><span class="un">万円</span></div>
+      <div class="tip">手数料33万＋登記11万＝44万 など</div>
+    </div>
+  </div>
+
+  <!-- リフォーム -->
+  <div class="card">
+    <div class="ctitle">🔨 リフォーム見積もり（内覧チェック）</div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">見積レベル（全項目に適用）</div>
+      <div class="lvbtns" id="lvbtns">
+        <button type="button" class="lvbtn" data-lv="0">安め</button>
+        <button type="button" class="lvbtn active" data-lv="1">中間</button>
+        <button type="button" class="lvbtn" data-lv="2">高め</button>
+      </div>
+    </div>
+    <div id="rlist"></div>
+    <div class="rtbar">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">リフォーム見積もり合計</div>
+      <div class="rtrow"><span class="rtk">🟢 DIY合計</span><span class="rtv dv" id="diyT">0万円</span></div>
+      <div class="rtrow"><span class="rtk">🟠 外注合計</span><span class="rtv ov" id="outT">0万円</span></div>
+      <div class="rtrow grand"><span class="rtk">選択配分合計</span><span class="rtv" id="mixT">0万円</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🏠 家賃・収入</div>
+    <div class="field">
+      <label>想定月額家賃</label>
+      <div class="fw"><input type="number" id="rent" inputmode="decimal" placeholder="4.5"><span class="un">万円</span></div>
+    </div>
+    <div class="field">
+      <label>管理手数料率</label>
+      <div class="slrow">
+        <input type="range" id="mgmt" min="0" max="15" step="0.5" value="5.5">
+        <span class="slv" id="mgmtv">5.5%</span>
+      </div>
+      <div class="tip">管理会社への割合。自主管理なら0%</div>
+    </div>
+    <div class="field">
+      <label>空室想定（年間）</label>
+      <div class="slrow">
+        <input type="range" id="vac" min="0" max="3" step="0.5" value="1">
+        <span class="slv" id="vacv">1ヶ月</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">📋 年間経費</div>
+    <div class="field">
+      <label>固定資産税（年額）</label>
+      <div class="fw"><input type="number" id="tax" inputmode="decimal" placeholder="5"><span class="un">万円</span></div>
+    </div>
+    <div class="field">
+      <label>その他維持費・修繕積立（年額）</label>
+      <div class="fw"><input type="number" id="aoth" inputmode="decimal" placeholder="3"><span class="un">万円</span></div>
+    </div>
+  </div>
+
+  <div class="calcbtns">
+    <button type="button" class="cbtn cdiy" id="btnDiy">🟢 DIYで計算</button>
+    <button type="button" class="cbtn cout" id="btnOut">🟠 外注で計算</button>
+  </div>
+  <button type="button" class="cbtn cmix" id="btnMix">⚡ 選択配分で計算（混在）</button>
+</div>
+
+<!-- ===== 結果 ===== -->
+<div id="res" class="section">
+  <div class="rmlabel" id="rmlbl"></div>
+  <div id="vban" class="vbanner good">
+    <div class="vico" id="vico">⭕</div>
+    <div class="vlbl" id="vlbl">まずまず</div>
+    <div class="vsub" id="vsub">検討の余地あり</div>
+  </div>
+  <div class="mgrid">
+    <div class="mc inf" id="mc-gy"><div class="ml">表面利回り</div><div class="mv" id="v-gy">-<span class="u2">%</span></div><div class="ms">年間家賃÷総投資額</div></div>
+    <div class="mc inf" id="mc-ny"><div class="ml">実質利回り</div><div class="mv" id="v-ny">-<span class="u2">%</span></div><div class="ms">経費・空室考慮後</div></div>
+    <div class="mc inf" id="mc-cf"><div class="ml">月次手残り（平均）</div><div class="mv" id="v-cf">-<span class="u2">円</span></div><div class="ms">空室月含む平均</div></div>
+    <div class="mc inf" id="mc-pb"><div class="ml">投資回収年数</div><div class="mv" id="v-pb">-<span class="u2">年</span></div><div class="ms">実質CFベース</div></div>
+    <div class="mc full inf" id="mc-tot"><div class="ml">総投資額</div><div class="mv" id="v-tot">-<span class="u2">万円</span></div><div class="ms" id="v-tots"></div></div>
+  </div>
+  <div class="cmptbl" id="cmptbl" style="display:none">
+    <div class="cmphead">🔨 リフォーム DIY vs 外注 比較</div>
+    <div class="cmplbls"><span></span><span class="cl-diy">🟢 DIY</span><span class="cl-out">🟠 外注</span></div>
+    <div id="cmplist"></div>
+  </div>
+  <div class="bkd">
+    <div class="bkrow"><span class="bk">年間想定家賃収入</span><span class="bv" id="b-rent">-</span></div>
+    <div class="bkrow"><span class="bk">　空室損失</span><span class="bv" id="b-vac" style="color:var(--red)">-</span></div>
+    <div class="bkrow"><span class="bk">　管理手数料</span><span class="bv" id="b-mgmt" style="color:var(--red)">-</span></div>
+    <div class="bkrow"><span class="bk">固定資産税</span><span class="bv" id="b-tax" style="color:var(--red)">-</span></div>
+    <div class="bkrow"><span class="bk">その他維持費</span><span class="bv" id="b-oth" style="color:var(--red)">-</span></div>
+    <div class="bkrow btot"><span class="bk">年間純収益（NOI）</span><span class="bv" id="b-noi">-</span></div>
+  </div>
+  <button type="button" class="savbtn" id="btnSave">💾 履歴に保存</button>
+  <button type="button" class="bkbtn" id="btnBack">← 入力に戻る</button>
+</div>
+
+<!-- ===== 履歴 ===== -->
+<div id="his" class="section">
+  <div id="hlist"></div>
+  <button type="button" class="clearbtn" id="btnClear">🗑️ 履歴をすべて削除</button>
+</div>
+
+<script>
+// ===== closest ポリフィル（iOS古いバージョン対応） =====
+function cl(el, cls, root) {
+  while (el && el !== root) {
+    if (el.classList && el.classList.contains(cls)) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+function clAttr(el, attr, root) {
+  while (el && el !== root) {
+    if (el.getAttribute && el.getAttribute(attr)) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+// ===== データ定義 =====
+var CAT = [
+  {lbl:'🧱 内装（壁・床）', items:[
+    {id:'r01', nm:'壁紙張替え',          ht:'1部屋あたり（部屋数を入力）', diy:[0.5,1,1.5],  out:[3,5,8],     rk:'低', qty:true,  qu:'部屋'},
+    {id:'r02', nm:'クッションフロア張替え', ht:'1部屋あたり（部屋数を入力）', diy:[0.3,0.5,0.8], out:[2,3.5,5],   rk:'低', qty:true,  qu:'部屋'},
+    {id:'r03', nm:'フロアタイル施工',      ht:'1部屋あたり（部屋数を入力）', diy:[0.5,1,1.5],  out:[2,3.5,5],   rk:'低', qty:true,  qu:'部屋'},
+    {id:'r04', nm:'床貼り（根太＋合板）',  ht:'下地からやり直し',           diy:[3,5.5,8],    out:[10,17.5,25], rk:'中', qty:false},
+    {id:'r18', nm:'畳撤去',              ht:'1部屋あたり（部屋数を入力）', diy:[0.3,0.5,0.8], out:[0.8,1.5,2.5],rk:'低', qty:true,  qu:'部屋'},
+    {id:'r24', nm:'和室→洋室化',         ht:'1部屋あたり（部屋数を入力）', diy:[10,20,30],   out:[20,45,70],  rk:'高', qty:true,  qu:'部屋'}
+  ]},
+  {lbl:'🚰 水廻り', items:[
+    {id:'r08', nm:'洗面台取り付け',       ht:'部材代込み / 外注は工賃2万+部材', diy:[2.5,4.5,7],  out:[3,5,8],    rk:'中', qty:false},
+    {id:'r09', nm:'トイレ交換',           ht:'便器代込み / 外注は工賃+便器代',  diy:[5,8,12],     out:[10,15,22], rk:'中', qty:false},
+    {id:'r10', nm:'キッチン交換',         ht:'システムキッチン',               diy:[5,10,15],    out:[15,27.5,40],rk:'高', qty:false},
+    {id:'r11', nm:'洗濯機置き場制作',     ht:'パン・水栓',                    diy:[1,2,3],      out:[3,6.5,10], rk:'中', qty:false},
+    {id:'r12', nm:'混合水栓取り替え',     ht:'1カ所あたり（カ所数を入力）',    diy:[0.8,1.5,2.5],out:[2.5,4,6],  rk:'中', qty:true,  qu:'カ所'},
+    {id:'r17', nm:'水漏れ補修（軽微）',   ht:'パッキン交換など',              diy:[0,0.25,0.5], out:[0.5,1.25,2],rk:'中', qty:false},
+    {id:'r25', nm:'給湯器交換',           ht:'ガス給湯器・工賃込み',          diy:[5,8,12],     out:[10,15,22], rk:'高', qty:false}
+  ]},
+  {lbl:'🪟 建具・外装', items:[
+    {id:'r13', nm:'網戸張替え',    ht:'1枚あたり（枚数を入力）',   diy:[0.1,0.15,0.2],  out:[0.3,0.55,0.8],  rk:'低', qty:true,  qu:'枚'},
+    {id:'r19', nm:'襖・障子張替え', ht:'1枚あたり（枚数を入力）',   diy:[0.05,0.175,0.3],out:[0.3,0.55,0.8],  rk:'低', qty:true,  qu:'枚'},
+    {id:'r20', nm:'下駄箱交換',    ht:'玄関収納',                 diy:[0.5,1.25,2],    out:[1,2.5,4],        rk:'低', qty:false},
+    {id:'r21', nm:'手すり取付',    ht:'廊下・浴室など',            diy:[0.2,0.35,0.5],  out:[0.5,1,1.5],      rk:'低', qty:false},
+    {id:'r23', nm:'雨樋掃除・補修', ht:'高所注意',                 diy:[0,0.15,0.3],    out:[1,1.75,2.5],     rk:'中', qty:false}
+  ]},
+  {lbl:'⚡ 設備・電気', items:[
+    {id:'r14', nm:'照明交換',       ht:'シーリング・LED',         diy:[0.1,0.3,0.5],  out:[0.5,1,1.5],  rk:'低', qty:false},
+    {id:'r15', nm:'換気扇交換',     ht:'浴室・台所など',          diy:[0.3,0.9,1.5],  out:[1,2,3],      rk:'低', qty:false},
+    {id:'r16', nm:'コンセント交換', ht:'※電気工事士要資格',       diy:[0.1,0.2,0.3],  out:[0.5,1,1.5],  rk:'高', qty:false},
+    {id:'r22', nm:'コーキング施工', ht:'浴室・外壁目地',          diy:[0.1,0.2,0.3],  out:[0.5,1,1.5],  rk:'低', qty:false}
+  ]},
+  {lbl:'🌿 外構・撤去', items:[
+    {id:'r05', nm:'草刈り',     ht:'敷地内の草刈り',    diy:[0,0.15,0.3], out:[0.5,1.25,2],rk:'低', qty:false},
+    {id:'r06', nm:'樹木伐採',   ht:'庭木・切り株',      diy:[0,1,2],      out:[2,5,8],     rk:'高', qty:false},
+    {id:'r07', nm:'不用品撤去', ht:'4部屋分目安',       diy:[0,1.5,3],    out:[30,40,50],  rk:'中', qty:false}
+  ]}
+];
+
+// ===== 状態 =====
+var lv = 1;
+var sel = {}; // id => {method:'diy'|'out', qty:number, checked:boolean}
+var curResult = null;
+
+// IDからitemを取得
+function getItem(id) {
+  for (var ci = 0; ci < CAT.length; ci++) {
+    for (var ii = 0; ii < CAT[ci].items.length; ii++) {
+      if (CAT[ci].items[ii].id === id) return CAT[ci].items[ii];
+    }
+  }
+  return null;
+}
+
+// ===== タブ切り替え =====
+function showTab(id) {
+  var sections = document.querySelectorAll('.section');
+  for (var i = 0; i < sections.length; i++) sections[i].classList.remove('show');
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  var sec = document.getElementById(id);
+  if (sec) sec.classList.add('show');
+  var order = ['inp','res','his'];
+  var idx = order.indexOf(id);
+  if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+  if (id === 'his') renderHis();
+}
+
+// ===== 見積レベル =====
+function setLv(n) {
+  lv = n;
+  var btns = document.querySelectorAll('.lvbtn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', parseInt(btns[i].getAttribute('data-lv')) === n);
+  }
+  updateAll();
+}
+
+// ===== 項目別レベル設定 =====
+function setItemLv(id, n) {
+  if (!sel[id]) sel[id] = {method:'diy', qty:1, checked:false, ilv:null};
+  // 同じボタンを再度押したらリセット（グローバルに戻す）
+  sel[id].ilv = (sel[id].ilv === n) ? null : n;
+  for (var i = 0; i < 3; i++) {
+    var btn = document.getElementById('ilv-' + id + '-' + i);
+    if (btn) btn.classList.toggle('active', sel[id].ilv === i);
+  }
+  updateAll();
+}
+
+// ===== チェックボックストグル =====
+function togItem(id) {
+  if (!sel[id]) sel[id] = {method:'diy', qty:1, checked:false, ilv:null};
+  sel[id].checked = !sel[id].checked;
+  var chkEl = document.getElementById('chk-' + id);
+  var expEl = document.getElementById('exp-' + id);
+  if (chkEl) {
+    chkEl.classList.toggle('on', sel[id].checked);
+    chkEl.textContent = sel[id].checked ? '✓' : '';
+  }
+  if (expEl) expEl.classList.toggle('open', sel[id].checked);
+  updateAll();
+}
+
+// ===== DIY/外注切り替え =====
+function setMeth(id, m) {
+  if (!sel[id]) sel[id] = {method:'diy', qty:1, checked:false, ilv:null};
+  sel[id].method = m;
+  var bd = document.getElementById('bd-' + id);
+  var bo = document.getElementById('bo-' + id);
+  if (bd) bd.className = 'mbtn' + (m === 'diy' ? ' adiy' : '');
+  if (bo) bo.className = 'mbtn' + (m === 'out' ? ' aout' : '');
+  updateAll();
+}
+
+// ===== 数量変更 =====
+function chgQty(id, d) {
+  if (!sel[id]) sel[id] = {method:'diy', qty:1, checked:false, ilv:null};
+  var q = (sel[id].qty || 1) + d;
+  if (q < 1) q = 1;
+  if (q > 20) q = 20;
+  sel[id].qty = q;
+  var qn = document.getElementById('qn-' + id);
+  if (qn) qn.textContent = q;
+  updateAll();
+}
+
+// ===== 金額フォーマット =====
+function fmtW(n) {
+  if (n === 0) return '0万';
+  if (n < 1) return Math.round(n * 10000).toLocaleString() + '円';
+  return n.toFixed(1) + '万';
+}
+
+// ===== リスト合計更新 =====
+function updateAll() {
+  var dT = 0, oT = 0, mT = 0;
+  for (var ci = 0; ci < CAT.length; ci++) {
+    var items = CAT[ci].items;
+    for (var ii = 0; ii < items.length; ii++) {
+      var item = items[ii];
+      var s = sel[item.id] || {method:'diy', qty:1, checked:false, ilv:null};
+      var qty = s.qty || 1;
+      var ilv = (s.ilv != null) ? s.ilv : lv;
+      var dv = item.diy[ilv];
+      var ov = item.out[ilv];
+      var cdEl = document.getElementById('cd-' + item.id);
+      var coEl = document.getElementById('co-' + item.id);
+      var csEl = document.getElementById('cs-' + item.id);
+      if (cdEl) cdEl.textContent = fmtW(dv) + (item.qty ? '/' + item.qu : '');
+      if (coEl) coEl.textContent = fmtW(ov) + (item.qty ? '/' + item.qu : '');
+      dT += dv * qty;
+      oT += ov * qty;
+      if (s.checked) {
+        var tv = (s.method === 'diy' ? dv : ov) * qty;
+        mT += tv;
+        if (csEl) csEl.textContent = '→ ' + (qty > 1 ? '×' + qty + ' ' : '') + fmtW(tv);
+      } else {
+        if (csEl) csEl.textContent = '';
+      }
+    }
+  }
+  // 合計はチェック済みのみ
+  var dSel = 0, oSel = 0, mSel = 0;
+  for (var ci2 = 0; ci2 < CAT.length; ci2++) {
+    var items2 = CAT[ci2].items;
+    for (var ii2 = 0; ii2 < items2.length; ii2++) {
+      var item2 = items2[ii2];
+      var s2 = sel[item2.id] || {method:'diy', qty:1, checked:false, ilv:null};
+      if (!s2.checked) continue;
+      var qty2 = s2.qty || 1;
+      var ilv2 = (s2.ilv != null) ? s2.ilv : lv;
+      dSel += item2.diy[ilv2] * qty2;
+      oSel += item2.out[ilv2] * qty2;
+      mSel += (s2.method === 'diy' ? item2.diy[ilv2] : item2.out[ilv2]) * qty2;
+    }
+  }
+  var dTEl = document.getElementById('diyT');
+  var oTEl = document.getElementById('outT');
+  var mTEl = document.getElementById('mixT');
+  if (dTEl) dTEl.textContent = dSel.toFixed(1) + '万円';
+  if (oTEl) oTEl.textContent = oSel.toFixed(1) + '万円';
+  if (mTEl) mTEl.textContent = mSel.toFixed(1) + '万円';
+}
+
+// ===== リスト構築 =====
+function buildList() {
+  var el = document.getElementById('rlist');
+  if (!el) return;
+  var html = '';
+  for (var ci = 0; ci < CAT.length; ci++) {
+    var cat = CAT[ci];
+    html += '<div class="cathead">' + cat.lbl + '</div>';
+    for (var ii = 0; ii < cat.items.length; ii++) {
+      var item = cat.items[ii];
+      if (!sel[item.id]) sel[item.id] = {method:'diy', qty:1, checked:false, ilv:null};
+      var rc = item.rk === '低' ? 'bl' : item.rk === '高' ? 'bh' : 'bm';
+      var qhtml = '';
+      if (item.qty) {
+        qhtml = '<div class="qrow">'
+          + '<span class="ql">' + item.qu + '数：</span>'
+          + '<div class="qstep">'
+          + '<button class="qbtn" data-action="qminus" data-id="' + item.id + '">－</button>'
+          + '<span class="qnum" id="qn-' + item.id + '">1</span>'
+          + '<button class="qbtn" data-action="qplus" data-id="' + item.id + '">＋</button>'
+          + '</div>'
+          + '</div>';
+      }
+      html += '<div class="ritem">'
+        + '<div class="ritem-head" data-action="toggle" data-id="' + item.id + '">'
+        + '<div class="chk" id="chk-' + item.id + '"></div>'
+        + '<div class="rinfo"><div class="rname">' + item.nm + '</div><div class="rhint">' + item.ht + '</div></div>'
+        + '<span class="rbadge ' + rc + '">リスク' + item.rk + '</span>'
+        + '</div>'
+        + '<div class="rexp" id="exp-' + item.id + '">'
+        + qhtml
+        + '<div class="mtog">'
+        + '<button class="mbtn adiy" id="bd-' + item.id + '" data-action="setdiy" data-id="' + item.id + '">🟢 DIY</button>'
+        + '<button class="mbtn" id="bo-' + item.id + '" data-action="setout" data-id="' + item.id + '">🟠 外注</button>'
+        + '</div>'
+        + '<div class="ilvbtns">'
+        + '<span class="ilvlbl">個別レベル：</span>'
+        + '<button class="ilvbtn" id="ilv-' + item.id + '-0" data-action="setilv" data-id="' + item.id + '" data-ilv="0">安め</button>'
+        + '<button class="ilvbtn" id="ilv-' + item.id + '-1" data-action="setilv" data-id="' + item.id + '" data-ilv="1">中間</button>'
+        + '<button class="ilvbtn" id="ilv-' + item.id + '-2" data-action="setilv" data-id="' + item.id + '" data-ilv="2">高め</button>'
+        + '</div>'
+        + '<div class="cprev">'
+        + '<div class="citem"><div class="cl">🟢 DIY</div><div class="cv dg" id="cd-' + item.id + '">-</div></div>'
+        + '<div style="color:var(--muted);font-size:11px">vs</div>'
+        + '<div class="citem"><div class="cl">🟠 外注</div><div class="cv og" id="co-' + item.id + '">-</div></div>'
+        + '<div class="csel" id="cs-' + item.id + '"></div>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    }
+  }
+  el.innerHTML = html;
+
+  // イベント委譲：rlistコンテナで全クリックを受け取る（clickとtouchend両対応）
+  function handleRlistEvent(e) {
+    var target = e.target;
+    while (target && target !== el) {
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      if (action && id) {
+        if (e.type === 'touchend') e.preventDefault();
+        if (action === 'toggle') { togItem(id); return; }
+        if (action === 'setdiy') { setMeth(id, 'diy'); return; }
+        if (action === 'setout') { setMeth(id, 'out'); return; }
+        if (action === 'qminus') { chgQty(id, -1); return; }
+        if (action === 'qplus')  { chgQty(id,  1); return; }
+        if (action === 'setilv') { setItemLv(id, parseInt(target.getAttribute('data-ilv'))); return; }
+      }
+      target = target.parentElement;
+    }
+  }
+  el.addEventListener('click', handleRlistEvent);
+  el.addEventListener('touchend', handleRlistEvent);
+
+  updateAll();
+}
+
+// ===== 計算 =====
+function calc(mode) {
+  var price = parseFloat(document.getElementById('price').value) || 0;
+  var misc  = parseFloat(document.getElementById('misc').value)  || 0;
+  var rent  = parseFloat(document.getElementById('rent').value)  || 0;
+  var tax   = parseFloat(document.getElementById('tax').value)   || 0;
+  var aoth  = parseFloat(document.getElementById('aoth').value)  || 0;
+  var mgmt  = parseFloat(document.getElementById('mgmt').value)  || 0;
+  var vac   = parseFloat(document.getElementById('vac').value)   || 0;
+
+  if (price === 0 && rent === 0) {
+    alert('物件価格と想定家賃を入力してください');
+    return;
+  }
+
+  var reform = 0;
+  var det = [];
+  for (var ci = 0; ci < CAT.length; ci++) {
+    for (var ii = 0; ii < CAT[ci].items.length; ii++) {
+      var item = CAT[ci].items[ii];
+      var s = sel[item.id];
+      if (!s || !s.checked) continue;
+      var qty = s.qty || 1;
+      var ilvC = (s.ilv != null) ? s.ilv : lv;
+      var dv = item.diy[ilvC] * qty;
+      var ov = item.out[ilvC] * qty;
+      var v = mode === 'diy' ? dv : mode === 'out' ? ov : (s.method === 'diy' ? dv : ov);
+      reform += v;
+      var ql = (item.qty && qty > 1) ? ' ×' + qty + item.qu : '';
+      det.push({nm: item.nm + ql, diy: dv, out: ov, used: v, method: mode === 'mix' ? s.method : mode});
+    }
+  }
+
+  var total = price + reform + misc;
+  var ar = rent * 12;
+  var vl = rent * vac;
+  var mf = ar * (mgmt / 100);
+  var er = ar - vl - mf;
+  var ae = tax + aoth;
+  var noi = er - ae;
+  var gy = total > 0 ? (ar / total) * 100 : 0;
+  var ny = total > 0 ? (noi / total) * 100 : 0;
+  var cf = (noi / 12) * 10000;
+  var pb = noi > 0 ? total / noi : 999;
+
+  var vclass, vic, vlb, vsb;
+  if      (ny >= 15) { vclass='great'; vic='🔥'; vlb='激アツ◎';    vsb='即決候補！高利回り物件'; }
+  else if (ny >= 10) { vclass='great'; vic='⭕'; vlb='買いライン◎'; vsb='実質10%超え。強い物件'; }
+  else if (ny >= 7)  { vclass='good';  vic='🟡'; vlb='まずまず○';  vsb='利回り7〜10%。条件次第'; }
+  else if (ny >= 4)  { vclass='warn';  vic='⚠️'; vlb='要交渉△';    vsb='価格かリフォーム費を下げたい'; }
+  else               { vclass='bad';   vic='❌'; vlb='要再検討✕';   vsb='実質利回りが低すぎる'; }
+
+  var modeL = mode === 'diy' ? '🟢 DIYで計算' : mode === 'out' ? '🟠 外注で計算' : '⚡ 混在（選択配分）で計算';
+  var lvL = ['安め','中間','高め'][lv];
+
+  curResult = {
+    nm: document.getElementById('nm').value || '無名物件',
+    price:price, reform:reform, misc:misc, rent:rent, tax:tax, aoth:aoth, mgmt:mgmt, vac:vac,
+    mode:mode, modeL:modeL, lv:lv, lvL:lvL, det:det,
+    total:total, ar:ar, vl:vl, mf:mf, er:er, ae:ae, noi:noi,
+    gy:gy, ny:ny, cf:cf, pb:pb,
+    vclass:vclass, vic:vic, vlb:vlb, vsb:vsb,
+    date: new Date().toLocaleDateString('ja-JP', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+  };
+
+  renderRes(curResult);
+  showTab('res');
+}
+
+function ycc(y) { return y >= 10 ? 'pos' : y >= 7 ? 'inf' : y >= 4 ? 'war' : 'dan'; }
+function f1(n)  { return n.toFixed(1); }
+function fw(n)  { return f1(n) + '万円'; }
+
+function renderRes(r) {
+  document.getElementById('rmlbl').textContent = r.modeL + '（見積レベル：' + r.lvL + '）';
+  document.getElementById('vban').className = 'vbanner ' + r.vclass;
+  document.getElementById('vico').textContent = r.vic;
+  document.getElementById('vlbl').textContent = r.vlb;
+  document.getElementById('vsub').textContent = r.vsb;
+
+  document.getElementById('mc-gy').className = 'mc ' + ycc(r.gy);
+  document.getElementById('mc-ny').className = 'mc ' + ycc(r.ny);
+  document.getElementById('v-gy').innerHTML = f1(r.gy) + '<span class="u2">%</span>';
+  document.getElementById('v-ny').innerHTML = f1(r.ny) + '<span class="u2">%</span>';
+
+  var cfc = r.cf >= 0 ? 'pos' : 'dan';
+  document.getElementById('mc-cf').className = 'mc ' + cfc;
+  document.getElementById('v-cf').innerHTML = (r.cf >= 0 ? '+' : '') + Math.round(r.cf).toLocaleString() + '<span class="u2">円</span>';
+
+  var pbc = r.pb <= 8 ? 'pos' : r.pb <= 12 ? 'inf' : r.pb <= 18 ? 'war' : 'dan';
+  document.getElementById('mc-pb').className = 'mc ' + pbc;
+  document.getElementById('v-pb').innerHTML = (r.pb < 100 ? f1(r.pb) : '---') + '<span class="u2">年</span>';
+
+  document.getElementById('mc-tot').className = 'mc full inf';
+  document.getElementById('v-tot').innerHTML = f1(r.total) + '<span class="u2">万円</span>';
+  document.getElementById('v-tots').textContent = '物件' + f1(r.price) + '万＋リフォーム' + f1(r.reform) + '万＋諸費用' + f1(r.misc) + '万';
+
+  document.getElementById('b-rent').textContent = fw(r.ar);
+  document.getElementById('b-vac').textContent  = '−' + fw(r.vl);
+  document.getElementById('b-mgmt').textContent = '−' + fw(r.mf);
+  document.getElementById('b-tax').textContent  = '−' + fw(r.tax);
+  document.getElementById('b-oth').textContent  = '−' + fw(r.aoth);
+  document.getElementById('b-noi').textContent  = fw(r.noi);
+
+  var ca = document.getElementById('cmptbl');
+  if (r.det && r.det.length > 0) {
+    ca.style.display = 'block';
+    var dS = 0, oS = 0;
+    for (var i = 0; i < r.det.length; i++) { dS += r.det[i].diy; oS += r.det[i].out; }
+    var rows = '';
+    for (var i = 0; i < r.det.length; i++) {
+      var d = r.det[i];
+      var mc = d.method === 'diy' ? 'var(--green)' : 'var(--orange)';
+      var ml = d.method === 'diy' ? '▶DIY' : '▶外注';
+      rows += '<div class="cmprow">'
+        + '<span class="cn">' + d.nm + '<br><span style="font-size:9px;color:' + mc + '">' + ml + '</span></span>'
+        + '<span class="cd">' + fmtW(d.diy) + '</span>'
+        + '<span class="co">' + fmtW(d.out) + '</span>'
+        + '</div>';
+    }
+    rows += '<div class="cmprow tot"><span class="cn">合計</span><span class="cd">' + dS.toFixed(1) + '万</span><span class="co">' + oS.toFixed(1) + '万</span></div>';
+    document.getElementById('cmplist').innerHTML = rows;
+  } else {
+    ca.style.display = 'none';
+  }
+}
+
+// ===== 履歴 =====
+function getHis() {
+  try { return JSON.parse(localStorage.getItem('bh') || '[]'); } catch(e) { return []; }
+}
+function saveHis() {
+  if (!curResult) return;
+  var h = getHis();
+  h.unshift(Object.assign({}, curResult, {id: Date.now()}));
+  if (h.length > 30) h.pop();
+  localStorage.setItem('bh', JSON.stringify(h));
+  alert('💾「' + curResult.nm + '」を保存しました');
+}
+function clearHis() {
+  if (confirm('履歴をすべて削除しますか？')) {
+    localStorage.removeItem('bh');
+    renderHis();
+  }
+}
+var hlistBound = false;
+function renderHis() {
+  var h = getHis();
+  var el = document.getElementById('hlist');
+  if (!h.length) {
+    el.innerHTML = '<div class="emsg">📭 まだ履歴がありません<br>計算後に「履歴に保存」を押してください</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < h.length; i++) {
+    var r = h[i];
+    html += '<div class="hitem" data-his-id="' + r.id + '">'
+      + '<div class="hhdr">'
+      + '<div class="hname"><span class="hbadge bg-' + r.vclass + '">' + r.vlb + '</span>' + r.nm + '</div>'
+      + '<div class="hdate">' + (r.date || '') + '</div>'
+      + '</div>'
+      + '<div class="hmet">'
+      + '<div class="hm">表面 <span>' + parseFloat(r.gy).toFixed(1) + '%</span></div>'
+      + '<div class="hm">実質 <span>' + parseFloat(r.ny).toFixed(1) + '%</span></div>'
+      + '<div class="hm">投資額 <span>' + parseFloat(r.total).toFixed(0) + '万</span></div>'
+      + '<div class="hm"><span>' + (r.modeL || '') + '</span></div>'
+      + '</div>'
+      + '</div>';
+  }
+  el.innerHTML = html;
+
+  if (!hlistBound) {
+    hlistBound = true;
+    function onHisClick(e) {
+      var t = e.target;
+      while (t && t !== el) {
+        var hid = t.getAttribute('data-his-id');
+        if (hid) {
+          if (e.type === 'touchend') e.preventDefault();
+          var hisList = getHis();
+          var rec = null;
+          for (var j = 0; j < hisList.length; j++) {
+            if (String(hisList[j].id) === hid) { rec = hisList[j]; break; }
+          }
+          if (rec) { curResult = rec; renderRes(rec); showTab('res'); }
+          return;
+        }
+        t = t.parentElement;
+      }
+    }
+    el.addEventListener('click', onHisClick);
+    el.addEventListener('touchend', onHisClick);
+  }
+}
+
+// ===== 初期化・イベント登録 =====
+document.addEventListener('DOMContentLoaded', function() {
+
+  // タブボタン
+  var tabbar = document.getElementById('tabbar');
+  tabbar.addEventListener('click', function(e) {
+    var btn = cl(e.target, 'tab', tabbar.parentElement);
+    if (btn) showTab(btn.getAttribute('data-tab'));
+  });
+  tabbar.addEventListener('touchend', function(e) {
+    var btn = cl(e.target, 'tab', tabbar.parentElement);
+    if (btn) { e.preventDefault(); showTab(btn.getAttribute('data-tab')); }
+  });
+
+  // 見積レベルボタン
+  var lvbtns = document.getElementById('lvbtns');
+  lvbtns.addEventListener('click', function(e) {
+    var btn = cl(e.target, 'lvbtn', lvbtns.parentElement);
+    if (btn) setLv(parseInt(btn.getAttribute('data-lv')));
+  });
+  lvbtns.addEventListener('touchend', function(e) {
+    var btn = cl(e.target, 'lvbtn', lvbtns.parentElement);
+    if (btn) { e.preventDefault(); setLv(parseInt(btn.getAttribute('data-lv'))); }
+  });
+
+  // スライダー
+  document.getElementById('mgmt').addEventListener('input', function() {
+    document.getElementById('mgmtv').textContent = this.value + '%';
+  });
+  document.getElementById('vac').addEventListener('input', function() {
+    document.getElementById('vacv').textContent = this.value + 'ヶ月';
+  });
+
+  // 計算ボタン（click + touchend 両対応）
+  function addBtn(id, fn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', fn);
+    el.addEventListener('touchend', function(e) { e.preventDefault(); fn(); });
+  }
+  addBtn('btnDiy', function() { calc('diy'); });
+  addBtn('btnOut', function() { calc('out'); });
+  addBtn('btnMix', function() { calc('mix'); });
+
+  // 保存・戻る・クリア
+  addBtn('btnSave', saveHis);
+  addBtn('btnBack', function() { showTab('inp'); });
+  addBtn('btnClear', clearHis);
+
+  // リスト構築
+  buildList();
+});
+</script>
+</body>
+</html>
