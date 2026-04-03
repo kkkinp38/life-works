@@ -573,6 +573,85 @@
             -webkit-tap-highlight-color: rgba(0,0,0,0);
         }
         button { -webkit-appearance: none; cursor: pointer; }
+
+        /* ===== Googleカレンダーシート ===== */
+        .gcal-sheet {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.78);
+            z-index: 250;
+            align-items: flex-end;
+            padding: 16px;
+        }
+        .gcal-sheet.show { display: flex; }
+        .gcal-content {
+            background: linear-gradient(135deg, #0f1621 0%, #1a2332 100%);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        }
+        .gcal-header-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e0e0e0;
+            margin-bottom: 3px;
+        }
+        .gcal-header-sub {
+            font-size: 11px;
+            color: #505870;
+            margin-bottom: 16px;
+        }
+        .gcal-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 14px;
+            background: rgba(50, 60, 80, 0.55);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            text-decoration: none;
+            color: #e0e0e0;
+            transition: background 0.15s, border-color 0.15s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        .gcal-link:active {
+            background: rgba(74,158,255,0.18);
+            border-color: rgba(74,158,255,0.45);
+        }
+        .gcal-icon { font-size: 22px; flex-shrink: 0; }
+        .gcal-body { flex: 1; }
+        .gcal-name { font-size: 13px; font-weight: 600; color: #e0e0e0; margin-bottom: 2px; }
+        .gcal-date { font-size: 11px; color: #707888; }
+        .gcal-arrow { font-size: 16px; color: #4a9eff; flex-shrink: 0; }
+        .gcal-close-btn {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            margin-top: 12px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            color: #808080;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        .gcal-empty {
+            text-align: center;
+            padding: 20px 0;
+            color: #505870;
+            font-size: 13px;
+            line-height: 1.8;
+        }
     </style>
 </head>
 <body>
@@ -596,6 +675,16 @@
     </div>
 
     <button type="button" class="fab" id="fabBtn">+</button>
+
+    <!-- Googleカレンダー追加シート -->
+    <div id="gcalSheet" class="gcal-sheet">
+        <div class="gcal-content">
+            <div class="gcal-header-title">📅 Googleカレンダーに追加</div>
+            <div class="gcal-header-sub">追加したいイベントをタップしてください</div>
+            <div id="gcalLinks"></div>
+            <button type="button" class="gcal-close-btn" id="gcalCloseBtn">閉じる</button>
+        </div>
+    </div>
 
     <div id="propertyForm" class="hidden-form">
         <div class="form-content">
@@ -991,6 +1080,7 @@
                         </div>
                         <div class="card-actions">
                             <button type="button" class="action-btn edit-btn" data-idx="${idx}">編集</button>
+                            <button type="button" class="action-btn gcal-btn" data-idx="${idx}">📅 カレンダー</button>
                             <button type="button" class="action-btn delete del-btn" data-idx="${idx}">削除</button>
                         </div>
                     </div>
@@ -1010,6 +1100,11 @@
             if (t.classList.contains('edit-btn') || t.closest && t.closest('.edit-btn')) {
                 var btn = t.classList.contains('edit-btn') ? t : t.closest('.edit-btn');
                 if (btn) { if (e.type === 'touchend') e.preventDefault(); e.stopPropagation(); openPropertyForm(parseInt(btn.dataset.idx)); return; }
+            }
+            // カレンダーボタン
+            if (t.classList.contains('gcal-btn') || t.closest && t.closest('.gcal-btn')) {
+                var gbtn = t.classList.contains('gcal-btn') ? t : t.closest('.gcal-btn');
+                if (gbtn) { if (e.type === 'touchend') e.preventDefault(); e.stopPropagation(); openGCalMenu(parseInt(gbtn.dataset.idx)); return; }
             }
             // 削除ボタン
             if (t.classList.contains('del-btn') || t.closest && t.closest('.del-btn')) {
@@ -1152,6 +1247,109 @@
             `;
         }
 
+        // ===== Googleカレンダー連携 =====
+        function buildGCalDateStr(d) {
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + m + day;
+        }
+
+        function buildGCalUrl(title, date, details) {
+            var s = buildGCalDateStr(date);
+            var nd = new Date(date);
+            nd.setDate(nd.getDate() + 1);
+            var e = buildGCalDateStr(nd);
+            return 'https://calendar.google.com/calendar/event?action=TEMPLATE'
+                + '&text=' + encodeURIComponent(title)
+                + '&dates=' + s + '/' + e
+                + '&details=' + encodeURIComponent(details || '');
+        }
+
+        function openGCalMenu(idx) {
+            var prop = properties[idx];
+            var links = [];
+
+            // ===== 契約関連 =====
+            var cs = getContractStatus(prop);
+            if (cs && !cs.isExpired) {
+                // 解約通知期限（終了7ヶ月前）
+                links.push({
+                    icon: '📋',
+                    name: '解約通知期限（終了7ヶ月前）',
+                    date: cs.noticeDate,
+                    url: buildGCalUrl(
+                        '【' + prop.name + '】解約通知期限',
+                        cs.noticeDate,
+                        '定期借家契約の解約通知期限です。\nこの日までに更新or退去の意思確認を。\n契約終了日：' + cs.endDate.toLocaleDateString('ja-JP')
+                    )
+                });
+                // 契約終了日
+                links.push({
+                    icon: '🏚️',
+                    name: '契約終了日',
+                    date: cs.endDate,
+                    url: buildGCalUrl(
+                        '【' + prop.name + '】契約終了日',
+                        cs.endDate,
+                        '定期借家契約の終了日です。'
+                    )
+                });
+            }
+
+            // ===== 火災保険関連 =====
+            var fs = getFireInsuranceStatus(prop);
+            if (fs && !fs.isExpired) {
+                // 2ヶ月前アラート
+                var warn2 = new Date(fs.expiry);
+                warn2.setMonth(warn2.getMonth() - 2);
+                links.push({
+                    icon: '🔔',
+                    name: '火災保険 更新準備（満期2ヶ月前）',
+                    date: warn2,
+                    url: buildGCalUrl(
+                        '【' + prop.name + '】火災保険 更新準備',
+                        warn2,
+                        '火災保険満期まであと2ヶ月です。更新手続きを開始してください。\n満期日：' + fs.expiry.toLocaleDateString('ja-JP')
+                            + (prop.fireInsuranceNote ? '\n保険メモ：' + prop.fireInsuranceNote : '')
+                    )
+                });
+                // 満期日当日
+                links.push({
+                    icon: '🔥',
+                    name: '火災保険 満期日',
+                    date: fs.expiry,
+                    url: buildGCalUrl(
+                        '【' + prop.name + '】火災保険 満期',
+                        fs.expiry,
+                        '火災保険の満期日です。' + (prop.fireInsuranceNote ? '\n' + prop.fireInsuranceNote : '')
+                    )
+                });
+            }
+
+            var linksEl = document.getElementById('gcalLinks');
+            if (links.length === 0) {
+                linksEl.innerHTML = '<div class="gcal-empty">追加できる日程がありません。<br>契約情報や火災保険情報を入力してください。</div>';
+            } else {
+                linksEl.innerHTML = links.map(function(l) {
+                    return '<a href="' + l.url + '" target="_blank" rel="noopener" class="gcal-link">'
+                        + '<span class="gcal-icon">' + l.icon + '</span>'
+                        + '<span class="gcal-body">'
+                        + '<div class="gcal-name">' + l.name + '</div>'
+                        + '<div class="gcal-date">' + l.date.toLocaleDateString('ja-JP') + '</div>'
+                        + '</span>'
+                        + '<span class="gcal-arrow">›</span>'
+                        + '</a>';
+                }).join('');
+            }
+
+            document.getElementById('gcalSheet').classList.add('show');
+        }
+
+        function closeGCalMenu() {
+            document.getElementById('gcalSheet').classList.remove('show');
+        }
+
         // ===== タップ対応ユーティリティ =====
         function addTap(el, fn) {
             if (!el) return;
@@ -1188,6 +1386,15 @@
         });
         document.getElementById('propertyForm').addEventListener('touchend', function(e) {
             if (e.target === e.currentTarget) { e.preventDefault(); closePropertyForm(); }
+        });
+
+        // gcalシートを閉じる
+        addTap(document.getElementById('gcalCloseBtn'), function() { closeGCalMenu(); });
+        document.getElementById('gcalSheet').addEventListener('click', function(e) {
+            if (e.target === e.currentTarget) closeGCalMenu();
+        });
+        document.getElementById('gcalSheet').addEventListener('touchend', function(e) {
+            if (e.target === e.currentTarget) { e.preventDefault(); closeGCalMenu(); }
         });
 
         // Initialize
